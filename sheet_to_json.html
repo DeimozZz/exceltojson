@@ -1,0 +1,113 @@
+<script src="../lib/xlsx.full.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.7.7/xlsx.core.min.js"></script>
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<style>
+.bl {
+    display: none;
+    }
+</style>
+
+<html>
+<body>
+<form id="myForm">
+Select:<br>
+<select id="selid">
+<option value=""> --- </option>
+<option value="1">One</option>
+<option value="2">Two</option>
+</select>
+</form>
+<div id="toShow" class="variations_button bl">
+<input accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12" type="file" id="excel" name="files"/>
+<input type="submit" value="Done" id="done"/>
+</div>
+<script>
+
+function toscript(inp)
+{
+    $.ajax({
+    url:"url.php",
+    dataType: 'json',
+    type: 'POST',
+    data: {fromtable: '[{"value":"'+document.getElementById('selid').value+'"}]'+JSON.stringify(inp) } , 
+    async: true});
+}
+
+
+function handleFile(e) 
+{
+    var files = e.files;
+    var i, f;
+    var sus = '';
+    
+    //Loop through files
+    for (i = 0, f = files[i]; i != files.length; ++i) 
+    {
+        var reader = new FileReader();
+        var name = f.name;
+        reader.onload = function (e) 
+        {
+            var data = e.target.result;
+            var workbook = XLSX.read(data, { type: 'binary' });
+            var sheet_name_list = workbook.SheetNames;
+            sheet_name_list.forEach(function (y) 
+                {
+                    var result = '';
+                    /* iterate through sheets */
+            //Convert the cell value to Json
+                var roa = XLSX.utils.sheet_to_json(workbook.Sheets[y]);
+                if (roa.length > 0)
+                    {
+                        result = roa;
+                        toscript(result);
+                    }
+
+                });
+        };
+        reader.readAsArrayBuffer(f);
+    }
+alert("Success!");
+}
+  //Change event to dropdownlist
+ document.getElementById('done').addEventListener('click', updateInfo, false);
+
+// preprocessing input data
+function updateInfo() 
+{
+   var doc = document.getElementById("excel");
+    var listoftype = ['xlsx','xlsm']; // array of allowable formats
+    if(($.inArray((doc.files[0].name.split('.')).pop(), listoftype)) == -1) 
+    {
+        alert('Выбран файл не поддерживаемого формата!\r\nПоддерживаемые форматы: '+listoftype.join(', '));
+    }
+    else  // 
+    { 
+    var resultAction = confirm("Проверьте внесённые данные: \r\n Устройство: "+ $("#klop option:selected").text() + "\r\n Файл: "+doc.files[0].name);
+        if(resultAction)
+        {
+            handleFile(doc);
+        }
+    }
+  doc.value = "";
+}
+
+/* show file-form if SELECT form selected
+else hiden
+*/
+var sel = document.getElementById('klop');
+    sel.addEventListener('change', function (event) {
+        if(this.value)  
+        {
+            document.getElementById('toShow').classList.remove('bl');
+        } 
+        else 
+        {
+            document.getElementById('toShow').classList.add('bl');
+        }
+    });
+
+</script>
+
+</body>
+</html>
